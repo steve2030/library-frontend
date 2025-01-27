@@ -59,11 +59,11 @@ jobs:
       uses: actions/checkout@v3
 
     # Install and Start Minikube
-    - name: Install Minikube
-      uses: medyagh/setup-minikube@v2
-      with:
-        minikube-version: 'latest'
-        kubernetes-version: 'v1.26.0'
+    # - name: Install Minikube
+    #   uses: medyagh/setup-minikube@v2
+    #   with:
+    #     minikube-version: 'latest'
+    #     kubernetes-version: 'v1.26.0'
 
     - name: Start Minikube
       run: minikube start --driver=docker
