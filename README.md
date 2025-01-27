@@ -1,70 +1,50 @@
-# Getting Started with Create React App
+# Library Application 
+## Objective
+This project demonstrates the process of automating, containerizing, and deploying a simple React application using modern DevOps practices. The goal is to set up a basic frontend application, containerize it using Docker, automate the CI/CD pipeline with GitHub Actions, and deploy the containerized app to Minikube using Kubernetes.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Application Overview
+The application is a basic React frontend that displays a static list of books. The project focuses on deployment and automation rather than extensive development.
 
-## Available Scripts
+## Project Structure
 
-In the project directory, you can run:
+## Steps to Build and Run the Application Locally
 
-### `npm start`
+### 1. Clone the repository, Install the Dependencies and Run Locally
+git clone git@github.com:steve2030/library-frontend.git
+cd library-frontend
+npm install
+npm start
+### 2. Dockerization.
+#### Build Docker image.
+ docker build -t steve001steve/library:latest .
+#### Push to DockerHub on a private Repository
+ docker push steve001steve/library:latest
+### 3. Deployment
+#### Install minikue locally WSL2 preferred.
+#### Start Minikube
+ minikube start
+#### Confirm that Minikube is Working properly
+ minikube status
+#### Create a namespace 
+ kubectl create ns library
+#### Create a kubernetes folder and add deployment and service file.
+#### Apply the manifest files in that specific namespace
+ kubectl apply -f kubernetes/deployment.yaml -n library
+ kubectl apply -f kubernetes/service.yaml -n library
+#### Confirm that the pods are running
+ kubectl get pods -n library
+#### Check the service
+ kubectl get svc -n library
+#### Access the application from the Browser.
+#####get minikube Ip address.
+ minikube IP
+ Http://<minikube ip>30001
+ or 
+ minikube service library-app-service --url -n library
+ or 
+ kubectl port-forward svc/library-app-service 8080:80 -n library
+ http://localhost/8080
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
 
-### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)

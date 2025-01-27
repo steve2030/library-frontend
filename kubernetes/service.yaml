@@ -5,7 +5,7 @@ metadata:
   labels:
     app: library-app
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: library-app
   ports:
