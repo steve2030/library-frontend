@@ -49,8 +49,8 @@ jobs:
     - name: Push Docker Image
       run: docker push ${{ secrets.DOCKER_USERNAME }}/library:latest
 
-  deploy:
-    name: Deploy to Kubernetes
+  deploy-minikube:
+    name: Deploy to Minikube
     runs-on: ubuntu-latest
     needs: docker
 
@@ -58,15 +58,36 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Set up kubectl
-      uses: azure/setup-kubectl@v3
+    # Install and Start Minikube
+    - name: Install Minikube
+      uses: medyagh/setup-minikube@v2
       with:
-        version: 'latest'
+        minikube-version: 'latest'
+        kubernetes-version: 'v1.26.0'
 
-    - name: Set up KubeConfig
-      run: echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+    - name: Start Minikube
+      run: minikube start --driver=docker
 
-    - name: Deploy to Kubernetes
+    # Build Docker Image in Minikube's Docker Environment
+    - name: Use Minikube Docker Environment
+      run: eval $(minikube docker-env)
+
+    - name: Build Docker Image for Minikube
+      run: docker build -t library-app:latest .
+
+    # Create a Namespace
+    - name: Create Namespace
       run: |
-        kubectl apply -f deployment.yaml -n library
-        kubectl apply -f service.yaml -n library
+        kubectl create namespace library || echo "Namespace already exists"
+
+    # Deploy Kubernetes Manifests in the Namespace
+    - name: Apply Kubernetes Manifests
+      run: |
+        kubectl apply -f kubernetes/deployment.yaml -n library
+        kubectl apply -f kubernetes/service.yaml -n library
+
+    # Verify Deployment in the Namespace
+    - name: Verify Deployment
+      run: |
+        kubectl get pods -n library
+        kubectl get services -n library
