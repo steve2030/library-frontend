@@ -78,7 +78,7 @@ jobs:
     - name: Pull and Tag Docker Image for Minikube
       run: |
         docker pull ${{ secrets.DOCKER_USERNAME }}/library:${{ env.NEW_TAG }}
-        docker tag ${{ secrets.DOCKER_USERNAME }}/library:${{ env.NEW_TAG }} library-app:${{ env.NEW_TAG }}
+        
 
     - name: Create Namespace
       run: |
