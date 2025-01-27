@@ -17,19 +17,9 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Install Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18
-
-    - name: Install Dependencies
-      run: npm install
-
-    - name: Build React Application
-      run: npm run build
-
+   
   docker:
-    name: Build and Push Docker Image
+    name: Build and Push Docker Image with Incremented Tag
     runs-on: ubuntu-latest
     needs: build
 
@@ -43,11 +33,32 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build Docker Image
-      run: docker build -t ${{ secrets.DOCKER_USERNAME }}/library:latest .
+    - name: Get Latest Tag from Docker Hub
+      run: |
+        TAGS=$(curl -s "https://registry.hub.docker.com/v2/repositories/${{ secrets.DOCKER_USERNAME }}/library/tags" | jq -r '.results[].name')
+        echo "Previous tags: $TAGS"
+        LATEST_TAG=$(echo "$TAGS" | sort -rV | head -n 1)
+        echo "Latest tag is $LATEST_TAG"
+        echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
 
-    - name: Push Docker Image
-      run: docker push ${{ secrets.DOCKER_USERNAME }}/library:latest
+    - name: Increment Tag
+      id: increment_tag
+      run: |
+        if [ -z "$LATEST_TAG" ]; then
+          NEW_TAG="1.0.0"  # Start from 1.0.0 if no tags exist
+        else
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_TAG"
+          PATCH=$((PATCH + 1))
+          NEW_TAG="$MAJOR.$MINOR.$PATCH"
+        fi
+        echo "New tag is $NEW_TAG"
+        echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
+
+    - name: Build Docker Image with New Tag
+      run: docker build -t ${{ secrets.DOCKER_USERNAME }}/library:${{ env.NEW_TAG }} .
+
+    - name: Push Docker Image with New Tag
+      run: docker push ${{ secrets.DOCKER_USERNAME }}/library:${{ env.NEW_TAG }}
 
   deploy-minikube:
     name: Deploy to Minikube
@@ -58,35 +69,32 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    # Install and Start Minikube
-    # - name: Install Minikube
-    #   uses: medyagh/setup-minikube@v2
-    #   with:
-    #     minikube-version: 'latest'
-    #     kubernetes-version: 'v1.26.0'
+    - name: Install Minikube
+      uses: medyagh/setup-minikube@v2
+      with:
+        minikube-version: 'latest'
+        kubernetes-version: 'v1.26.0'
 
     - name: Start Minikube
       run: minikube start --driver=docker
 
-    # Build Docker Image in Minikube's Docker Environment
     - name: Use Minikube Docker Environment
       run: eval $(minikube docker-env)
 
-    - name: Build Docker Image for Minikube
-      run: docker build -t library-app:latest .
+    - name: Pull and Tag Docker Image for Minikube
+      run: |
+        docker pull ${{ secrets.DOCKER_USERNAME }}/library:${{ env.NEW_TAG }}
+        docker tag ${{ secrets.DOCKER_USERNAME }}/library:${{ env.NEW_TAG }} library-app:${{ env.NEW_TAG }}
 
-    # Create a Namespace
     - name: Create Namespace
       run: |
         kubectl create namespace library || echo "Namespace already exists"
 
-    # Deploy Kubernetes Manifests in the Namespace
     - name: Apply Kubernetes Manifests
       run: |
-        kubectl apply -f kubernetes/deployment.yaml -n library
-        kubectl apply -f kubernetes/service.yaml -n library
+        kubectl apply -f deployment.yaml -n library
+        kubectl apply -f service.yaml -n library
 
-    # Verify Deployment in the Namespace
     - name: Verify Deployment
       run: |
         kubectl get pods -n library
