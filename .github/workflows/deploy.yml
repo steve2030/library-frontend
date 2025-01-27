@@ -17,7 +17,6 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-   
   docker:
     name: Build and Push Docker Image with Incremented Tag
     runs-on: ubuntu-latest
@@ -35,7 +34,7 @@ jobs:
 
     - name: Get Latest Tag from Docker Hub
       run: |
-        TAGS=$(curl -s "https://registry.hub.docker.com/v2/repositories/${{ secrets.DOCKER_USERNAME }}/library/tags" | jq -r '.results[].name')
+        TAGS=$(curl -s -u "${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }}" "https://registry.hub.docker.com/v2/repositories/${{ secrets.DOCKER_USERNAME }}/library/tags" | jq -r '.results[].name')
         echo "Previous tags: $TAGS"
         LATEST_TAG=$(echo "$TAGS" | sort -rV | head -n 1)
         echo "Latest tag is $LATEST_TAG"
@@ -75,10 +74,12 @@ jobs:
     - name: Use Minikube Docker Environment
       run: eval $(minikube docker-env)
 
-    - name: Pull and Tag Docker Image for Minikube
+    - name: Debug the NEW_TAG value
+      run: echo "New Tag: ${{ env.NEW_TAG }}"
+
+    - name: Pull Docker Image for Minikube
       run: |
         docker pull ${{ secrets.DOCKER_USERNAME }}/library:${{ env.NEW_TAG }}
-        
 
     - name: Create Namespace
       run: |
@@ -86,8 +87,8 @@ jobs:
 
     - name: Apply Kubernetes Manifests
       run: |
-        kubectl apply -f deployment.yaml -n library
-        kubectl apply -f service.yaml -n library
+        kubectl apply -f kubernets/deployment.yaml -n library
+        kubectl apply -f kubernetes/service.yaml -n library
 
     - name: Verify Deployment
       run: |
