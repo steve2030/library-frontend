@@ -1,24 +1,11 @@
-# Use an official Node.js runtime as a parent image
-FROM node:18
-
-# Set the working directory in the container
+FROM node:18-alpine AS build
 WORKDIR /app
-
-# Copy package.json and package-lock.json
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy the rest of the application code
+COPY package.json yarn.lock ./
+RUN yarn install
 COPY . .
+RUN yarn build
 
-# Build the app for production
-RUN npm run build
-
-# Serve the app using a simple HTTP server
-RUN npm install -g serve
-CMD ["serve", "-s", "build", "-l", "3000"]
-
-# Expose port 3000
-EXPOSE 3000
+FROM nginx:alpine
+COPY --from=build /app/build /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
